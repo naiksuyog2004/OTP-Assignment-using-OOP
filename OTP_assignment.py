@@ -1,7 +1,3 @@
-"""
-Module docstring: This module defines the OTPService class for sending OTPs.
-"""
-
 import smtplib
 import random
 import re
@@ -16,19 +12,6 @@ class OTPService:
         self.account_sid = account_sid
         self.auth_token = auth_token
         self.twilio_number = twilio_number
-
-    def validate_mobile_no(self, mobile_no):
-        """
-        Validates a mobile number.
-        """
-        return len(mobile_no) == 10 and mobile_no.isdigit()
-
-    def validate_email(self, email):
-        """
-        Validates an email address.
-        """
-        validation_condition = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        return bool(re.search(validation_condition, email))
 
     def generate_otp(self):
         """
@@ -61,21 +44,46 @@ class OTPService:
         )
         print(message.body)
 
-    def send_otp(self, mobile_no, email):
+    def send_otp_to_mobile_user(self, mobile_user):
         """
-        Sends OTP via the chosen method (SMS and/or email).
+        Sends OTP to a MobileUser instance.
         """
-        otp = self.generate_otp()
-
-        if self.validate_mobile_no(mobile_no):
-            self.send_otp_over_mobile(mobile_no, otp)
+        if mobile_user.validate_mobile_no():
+            self.send_otp_over_mobile(mobile_user.mobile_no, self.generate_otp())
         else:
             print("Invalid Mobile number")
 
-        if self.validate_email(email):
-            self.send_email(email, otp)
+    def send_otp_to_email_user(self, email_user):
+        """
+        Sends OTP to an EmailUser instance.
+        """
+        if email_user.validate_email():
+            self.send_email(email_user.email, self.generate_otp())
         else:
             print("Invalid Email")
+
+
+class MobileUser:
+    def __init__(self, mobile_no):
+        self.mobile_no = mobile_no
+
+    def validate_mobile_no(self):
+        """
+        Validates a mobile number.
+        """
+        return len(self.mobile_no) == 10 and self.mobile_no.isdigit()
+
+
+class EmailUser:
+    def __init__(self, email):
+        self.email = email
+
+    def validate_email(self):
+        """
+        Validates an email address.
+        """
+        validation_condition = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        return bool(re.search(validation_condition, self.email))
 
 
 if __name__ == "__main__":
@@ -85,7 +93,8 @@ if __name__ == "__main__":
 
     OTP_SERVICE = OTPService(ACCOUNT_SID, AUTH_TOKEN, TWILIO_NUMBER)
 
-    MOBILE_NO = input("Enter the Mobile number:")
-    EMAIL = input("Enter the Email:")
+    MOBILE_USER = MobileUser(input("Enter the Mobile number:"))
+    EMAIL_USER = EmailUser(input("Enter the Email:"))
 
-    OTP_SERVICE.send_otp(MOBILE_NO, EMAIL)
+    OTP_SERVICE.send_otp_to_mobile_user(MOBILE_USER)
+    OTP_SERVICE.send_otp_to_email_user(EMAIL_USER)
